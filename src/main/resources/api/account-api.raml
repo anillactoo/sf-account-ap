@@ -1,0 +1,109 @@
+#%RAML 1.0
+title: account-api
+baseUri: http://localhost:8081
+protocols: [HTTP]
+
+mediaType: 
+- application/json
+traits:
+  errResp: !include /traits/errResTrait.raml
+  transId: !include /traits/transactioIdTrait.raml
+types:
+  postReqDT: !include /DataTypes/postReqDataType.raml
+  putReqDt: !include /DataTypes/putReqDataType.raml
+/account/createAccount:
+  post:
+    is: [errResp,transId]
+    body:
+      application/json:
+        type: postReqDT
+        example:
+           {
+             Name: "Burlington Textiles Corp of America",
+             accountNumber: "CD656092",
+             Phone: "(336) 222-7000",
+             Type: "Cutomer - Channel",
+             Site: "NW",
+             account_id__c: 55667702
+           }
+    responses:
+      201:
+        body:
+          application/json:
+            example: !include /examples/createAccSuccResp.raml
+/account/getAccountDetails:
+  get:
+    is: [errResp,transId]
+    responses:
+      200:
+        body:
+          application/json:
+            type: postReqDT[]
+            example: !include /examples/getAccDetailsByIdSucceResp.raml
+             
+/account/{id}/getAcDetails:
+  uriParameters:
+    id:
+      type: string
+      example: "CD656092"
+  get:
+    is: [errResp,transId]
+    responses:
+      200:
+        body:
+         application/json:
+          type: postReqDT
+          example: 
+            {
+             Name: "Burlington Textiles Corp of America",
+             accountNumber: "CD656092",
+             Phone: "(336) 222-7000",
+             Type: "Cutomer - Channel",
+             Site: "NW",
+             account_id__c: 55667702
+             }
+/account/{id}/updateAcDetails:
+  uriParameters:
+    id:
+      type: string
+      example: "CD656092"
+  put:
+    is: [errResp,transId]
+    body:
+      application/json:
+        type: putReqDt[]
+        example:
+            [{
+             Name: "Burlington Textiles Corp of America",
+             accountNumber: "CD656092",
+             Phone: "(336) 222-7000",
+             Type: "Cutomer - Channel",
+             Site: "NW"
+             }]
+    responses:
+      200:
+        body:
+          application/json:
+            example:
+              {
+                "id": "CD656092",
+                "isUpdated": true,
+                "message": "Account Updated Successfully"
+              }
+/account/{id}/deleteAcDetails:
+  uriParameters:
+    id:
+      type: string
+      example: "CD656092"
+  delete:
+    is: [errResp,transId]
+    responses:
+      200:
+        body:
+          application/json:
+            example:
+              {
+                "isDeleted": true,
+                "message": "Account is Delete Successfully"
+              }
+

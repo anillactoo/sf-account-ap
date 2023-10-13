@@ -1,0 +1,34 @@
+#%RAML 1.0 Trait
+responses:
+  400:
+    body:
+      application/json:
+        example:
+          {
+          "code": "400",
+          "message": "Bad Request"
+        }
+  404:
+    body:
+      application/json:
+        example:
+          {
+          "code": "404",
+          "message": "Not Found"
+        }
+  405:
+    body:
+      application/json:
+        example:
+          {
+          "code": "405",
+          "message": "Methor Not Allowed"
+        }
+  500:
+    body:
+      application/json:
+        example:
+          {
+          "code": "500",
+          "message": "Internal Sever Error"
+        } 

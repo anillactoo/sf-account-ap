@@ -1,0 +1,18 @@
+#%RAML 1.0 DataType
+type: object
+properties:
+  Name: 
+    type: string
+    example: "Burlington Textiles Corp of America"
+  accountNumber:
+    type: string
+    example: "CD656092"
+  Phone: 
+    type: string
+    example: "(336) 222-7000"
+  Type: 
+    type: string
+    enum: ["Cutomer - Channel", "Customer - Direct"]
+  Site:
+    type: string
+    example: "NW"

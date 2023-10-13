@@ -1,0 +1,172 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:sftp="http://www.mulesoft.org/schema/mule/sftp" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns:salesforce="http://www.mulesoft.org/schema/mule/salesforce"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/salesforce http://www.mulesoft.org/schema/mule/salesforce/current/mule-salesforce.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/sftp http://www.mulesoft.org/schema/mule/sftp/current/mule-sftp.xsd">
+	<salesforce:sfdc-config name="Salesforce_Config" doc:name="Salesforce Config" doc:id="5839044d-8678-4672-807b-c836525dd055" >
+		<salesforce:basic-connection username="${sf.username}" password="${sf.password}" securityToken="${sf.secToken}"/>
+	</salesforce:sfdc-config>
+	<flow name="delete::deleteAcDetails-implementationFlow" doc:id="dbf1dcdd-3dc5-4d9d-822e-36b8f70b0f14" >
+		<logger level="INFO" doc:name="Entry logger" doc:id="eb7c54a7-b217-4ef7-97b9-abbf605da3ee" message="#[flow.name] Started"/>
+		<set-variable value='#[%dw 2.0&#10;output applicaton/json&#10;---&#10;"SELECT Id,Name from Account where account_id__c=$(vars.id)"]' doc:name="prepare delete query" doc:id="23f2220d-a917-4396-bd13-d34b65fa3169" variableName="selectQuery"/>
+		<salesforce:query doc:name="Select Record Id" doc:id="db126354-438a-42bd-be55-b98acaf1c113" config-ref="Salesforce_Config">
+			<salesforce:salesforce-query ><![CDATA[#[vars.selectQuery]]]></salesforce:salesforce-query>
+		</salesforce:query>
+		<ee:transform doc:name="Transform Message" doc:id="3d466d99-3186-442c-a035-9123eaa9d5f2" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload map{
+	Id: $.Id,
+	Name: $.Name
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<choice doc:name="sizeOf(payload)&gt;0" doc:id="89d8959f-759e-4e8d-bc2f-75854c69e937" >
+			<when expression="sizeOf(payload)&gt;0">
+				<salesforce:delete doc:name="Delete account entry from SF using id" doc:id="a48fdf5a-b1a3-4528-9133-2de0c7fdd360" config-ref="Salesforce_Config">
+			<salesforce:ids><![CDATA[#[payload.Id]]]></salesforce:ids>
+		</salesforce:delete>
+				<ee:transform doc:name="response payload" doc:id="1f2f6220-83b5-473a-ae62-0e9bc28215a0">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+			</when>
+			<otherwise >
+				<logger level="INFO" doc:name="Logger" doc:id="1ff0567a-5eec-4b1f-9750-9f099680cc43" message="Account Id:: #[vars.id] is not found "/>
+				<set-payload value='#[%dw 2.0&#10;output application/json&#10;---&#10;"Account Id::" ++ vars.id ++ " is not found "]' doc:name="Set Payload" doc:id="40c18108-5ae1-4109-aac6-bdf1b044e5f5" />
+			</otherwise>
+		</choice>
+		<logger level="INFO" doc:name="Exit logger" doc:id="d7eb3dc5-eb1c-4e49-90b0-a7c1c57d2b3d" message="#[flow.name] end"/>
+		<error-handler ref="referenceError_Handler" />
+	</flow>
+	
+	<flow name="get::getAcDetails-flow-implementationFlow" doc:id="46b733be-b8e5-4d1b-93bb-31c753c2a93a" >
+		<logger level="INFO" doc:name="Entry logger" doc:id="09a5f5e4-edd2-4529-99e6-e39a766cae52" message="#[flow.name] Started"/>
+		<set-variable value='#[%dw 2.0&#10;output applicaton/json&#10;---&#10;"select Name,accountNumber,Phone,Type,Site from Account where account_id__c=$(vars.id)"]' doc:name="prepare query" doc:id="764eb244-040b-49e4-a3a2-c9b4c5fcc3af" variableName="query"/>
+		<salesforce:query doc:name="Query" doc:id="11c83a92-4b1b-4f6c-a96d-1fd8bb97c3e6" config-ref="Salesforce_Config">
+			<salesforce:salesforce-query ><![CDATA[#[vars.query]]]></salesforce:salesforce-query>
+		</salesforce:query>
+		<choice doc:name="Choice" doc:id="78af5a99-cf39-4e1c-ba06-b8c0688d7a21" >
+			<when expression="sizeOf(payload)&gt;0">
+				<ee:transform doc:name="response payload" doc:id="198f019c-3871-4361-8b54-227b068269b6">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+var id=1000001
+---
+payload[0] - "Id"- "Type"]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+			</when>
+			<otherwise >
+				<logger level="INFO" doc:name="Logger" doc:id="b99f83b7-4d5b-45ac-bef9-298629d6f0ac" message="Account number:: #[vars.id] is not found "/>
+				<set-payload value='#[%dw 2.0&#10;output application/json&#10;---&#10;"Account Id::" ++ vars.id ++ " is not found "]' doc:name="Set Payload" doc:id="98fc302f-7d0b-4012-b7af-6bbaa44b0b04" />
+			</otherwise>
+		</choice>
+		<logger level="INFO" doc:name="Exit logger" doc:id="bd386c0e-f02a-4cda-9c13-4813f236a899" message="#[flow.name] end"/>
+		<error-handler ref="referenceError_Handler" />
+	
+</flow>
+	
+	<!--  -->
+	<flow name="get::getAccountDetails-implementationFlow" doc:id="0f212f2e-bf10-46a1-9367-246b3c7f30ec" >
+		<logger level="INFO" doc:name="Entry logger" doc:id="cc2fd8b5-f5e8-4f64-b8ce-fdf6f5c47463" message="#[flow.name] Started"/>
+		<set-variable value='#[%dw 2.0&#10;output applicaton/json&#10;---&#10;("select Name,accountNumber,Phone,Type,Site from Account")]' doc:name="prepare query" doc:id="242dcfe7-0903-492a-80b8-79fbc653907c" variableName="getAllAccDetailsquery"/>
+		<salesforce:query doc:name="get:: All-Account-Details" doc:id="d78102a0-6671-4ca8-a7c2-062f17639ae7" config-ref="Salesforce_Config">
+			<salesforce:salesforce-query ><![CDATA[#[vars.getAllAccDetailsquery]]]></salesforce:salesforce-query>
+		</salesforce:query>
+		<ee:transform doc:name="response payload" doc:id="d48b578b-50ca-4134-ae1c-bf8ad3ff14c4">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+payload map((item,index)->item - "Id" -"Type")]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" doc:name="Exit logger" doc:id="6467872f-fd2d-4773-9f45-7a2d863e6000" message="#[flow.name] end"/>
+		<error-handler ref="referenceError_Handler" />
+	
+</flow>
+	
+	
+	<flow name="put::updateAcDetails-implementationFlow" doc:id="18424dc8-f98e-426b-a2fd-75345292cb3c" >
+		<logger level="INFO" doc:name="Entry logger" doc:id="2e4298cb-5cba-46be-85d5-53adc3879fe9" message="#[flow.name] Started"/>
+		<set-variable value="#[payload]" doc:name="Set Previous Payload" doc:id="1303f6de-569b-4879-8230-ae0dc0eb6184" variableName="previousPayload"/>
+		<set-variable value='#[%dw 2.0&#10;output applicaton/json&#10;---&#10;"SELECT Id,Name from Account where account_id__c=$(vars.id)"]' doc:name="prepare select query for id" doc:id="8deaa4f2-9a3b-472a-b286-6379e6e087e9" variableName="preparedSQ"/>
+		<salesforce:query doc:name="Query" doc:id="cdce0e1b-f71b-4897-90d3-2a6d0f1b15ab" config-ref="Salesforce_Config">
+			<salesforce:salesforce-query ><![CDATA[#[vars.preparedSQ]]]></salesforce:salesforce-query>
+		</salesforce:query>
+		<choice doc:name="Choice" doc:id="707985bf-0330-4cc9-bb55-d464feb0a564" >
+			<when expression="sizeOf(payload)&gt;0">
+				<ee:transform doc:name="Transform Message" doc:id="582b44af-b4bb-4a6a-a7aa-0c8ba194fd11">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+[((payload map(item)->item - "Name") ++ vars.previousPayload) reduce ($$ ++ $)]]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+				<salesforce:update doc:name="Update" doc:id="3b70ca2f-c1ad-4bf8-94bb-2416e6beee96" config-ref="Salesforce_Config" type="Account" />
+			</when>
+			<otherwise >
+				<logger level="INFO" doc:name="Logger" doc:id="641958aa-8d5c-4611-8b48-7b35c0ff4773" message="Account number:: #[vars.id] is not found "/>
+				<set-payload value='#["Account Id" ++ vars.id ++ " is not found"]' doc:name="Set Payload" doc:id="3d8d20fc-72d2-4b79-a627-36402639e47a" />
+			</otherwise>
+		</choice>
+		<choice doc:name="Choice" doc:id="f259c7a2-0fe3-4813-9129-ac32aa2e7154" >
+			<when expression="payload.items.payload[0].success==true">
+				<ee:transform doc:name="response payload" doc:id="841a9416-989f-44be-9318-ef181849545f">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+			</when>
+		</choice>
+		<logger level="INFO" doc:name="Exit logger" doc:id="069a37ee-b504-49af-b3a0-2d1915f64b85" message="#[flow.name] end"/>
+		<error-handler ref="referenceError_Handler" />
+	
+</flow>
+	
+	<flow name="post::createAccount-implementationFlow" doc:id="2c895e17-382f-4ef3-ae15-a71348dba590" >
+		<logger level="INFO" doc:name="Entry logger" doc:id="c862a00f-5ef8-4238-af9f-dab83dd7f5f8" message="#[flow.name] Started"/>
+		<set-variable value="#[%dw 2.0&#10;output applicaton/json&#10;---&#10;[payload]]" doc:name="set payload" doc:id="5ec5414b-54e3-4760-8256-0a313ba0b7e5" variableName="setPayload"/>
+		<salesforce:create type="Account" doc:name="Create Account" doc:id="8844949b-e950-4963-b7d4-80c4e2ea7c01" config-ref="Salesforce_Config">
+			<salesforce:records ><![CDATA[#[vars.setPayload]]]></salesforce:records>
+		</salesforce:create>
+		<choice doc:name="Choice" doc:id="12c3819d-d9e7-407a-9657-a2ec2af543a1" >
+			<when expression="payload.items.payload.success[0] == true">
+				<ee:transform doc:name="response payload" doc:id="a14d7051-e30f-49c3-8e22-5cee54ae188c">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+    "id": payload.items.payload.id[0],
+    "success": payload.items.payload.success[0],
+    "message": "Account created Successfully" 
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+			</when>
+			<otherwise >
+				<logger level="INFO" doc:name="Logger" doc:id="80ce37f6-925b-4fdd-8986-bea9e544efe2" message="Account is not created for the payload #['/n'] //////////////////////////////////// #[payload]"/>
+				<set-payload value='#[%dw 2.0&#10;output application/json&#10;---&#10;"Account is not created, please check the payload"]' doc:name="Set Payload" doc:id="91cfd4bb-7376-4ac7-a4d5-8f600b45ae66" />
+			</otherwise>
+		</choice>
+		<logger level="INFO" doc:name="Exit logger" doc:id="bd84b6a2-ee6c-4451-8fb5-456457e5d420" message="#[flow.name] end"/>
+		<error-handler ref="referenceError_Handler" />
+	
+</flow>
+</mule>

@@ -1,0 +1,10 @@
+http:
+ host: "localhost"
+ port: "8081"
+ pathsfQuery: "/sfqueryTest"
+ pathsfQueryall: "/sfqueryAllTest"
+ pathsfCreate: "/sfcreate"
+sf:
+ username: "rajara@mycompany.com"
+ password: "##Raja@123456"
+ secToken: "LzCR6cZR9mB1UbYh3cWFF3Gq"

@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mule xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:apikit="http://www.mulesoft.org/schema/mule/mule-apikit" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd http://www.mulesoft.org/schema/mule/mule-apikit http://www.mulesoft.org/schema/mule/mule-apikit/current/mule-apikit.xsd http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd ">
+    <http:listener-config name="account-api-httpListenerConfig">
+        <http:listener-connection host="0.0.0.0" port="8081" />
+    </http:listener-config>
+    <apikit:config name="account-api-config" api="account-api.raml" outboundHeadersMapName="outboundHeaders" httpStatusVarName="httpStatus" />
+    <flow name="account-api-main">
+        <http:listener config-ref="account-api-httpListenerConfig" path="/api/*">
+            <http:response statusCode="#[vars.httpStatus default 200]">
+                <http:headers>#[vars.outboundHeaders default {}]</http:headers>
+            </http:response>
+            <http:error-response statusCode="#[vars.httpStatus default 500]">
+                <http:body>#[payload]</http:body>
+                <http:headers>#[vars.outboundHeaders default {}]</http:headers>
+            </http:error-response>
+        </http:listener>
+        <apikit:router config-ref="account-api-config" />
+        
+    </flow>
+    <flow name="account-api-console">
+        <http:listener config-ref="account-api-httpListenerConfig" path="/console/*">
+            <http:response statusCode="#[vars.httpStatus default 200]">
+                <http:headers>#[vars.outboundHeaders default {}]</http:headers>
+            </http:response>
+            <http:error-response statusCode="#[vars.httpStatus default 500]">
+                <http:body>#[payload]</http:body>
+                <http:headers>#[vars.outboundHeaders default {}]</http:headers>
+            </http:error-response>
+        </http:listener>
+        <apikit:console config-ref="account-api-config" />
+        <error-handler>
+            <on-error-propagate type="APIKIT:NOT_FOUND">
+                <ee:transform doc:name="Transform Message">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Resource not found"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">404</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+        </error-handler>
+    </flow>
+    <flow name="put:\account\(id)\updateAcDetails:application\json:account-api-config">
+        <logger level="INFO" doc:name="Entry Logger" doc:id="7abee704-4c37-45a2-ac23-2223a9420ccc" message="Entry in update account details flow"/>
+		<set-variable value="#[attributes.uriParams.'id']" doc:name="Set id" doc:id="2d5c9c18-4cb0-4f83-af13-b37fa8174ef9" variableName="id"/>
+        <flow-ref doc:name="put::updateAcDetails-implementationFlow" doc:id="8add9134-cad9-4637-bf7e-81cc524fa272" name="put::updateAcDetails-implementationFlow"/>
+		<ee:transform doc:name="Transform Message">
+            <ee:message>
+                <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+  id: "0015j00001CAZ0rAAH",
+  isUpdated: true,
+  message: "Account Updated Successfully"
+}]]></ee:set-payload>
+            </ee:message>
+        </ee:transform>
+		<logger level="INFO" doc:name="Exit Logger" doc:id="6398e850-a372-43b5-af0c-fc306e4893b4" message="Exit from update account details flow"/>
+    </flow>
+    <flow name="delete:\account\(id)\deleteAcDetails:account-api-config">
+        <logger level="INFO" doc:name="Entry Logger" doc:id="a19bc42f-3c6b-45b4-ac03-7626e3f34d31" message="Entry in get all account details flow"/>
+		<set-variable value="#[attributes.uriParams.'id']" doc:name="Set id" doc:id="d76bb20e-b1e4-4f8d-8cda-494ddea19eea" variableName="id"/>
+        <flow-ref doc:name="delete::deleteAcDetails-implementationFlow" doc:id="df0e89cb-5ca0-4883-8f82-7e41b22d8981" name="delete::deleteAcDetails-implementationFlow"/>
+		<ee:transform doc:name="Transform Message">
+            <ee:message>
+                <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+            </ee:message>
+        </ee:transform>
+		<logger level="INFO" doc:name="Exit Logger" doc:id="f1658d71-6f56-49bd-a132-8f7e19bcd9f0" message="Exit from delete flow"/>
+    </flow>
+    <flow name="get:\account\getAccountDetails:account-api-config" doc:id="726a318b-6963-45a9-b692-c1d6d192cdf0">
+        <logger level="INFO" doc:name="Entry Logger" doc:id="57693d07-0ebb-4679-9b97-dbda5b2e53e3" />
+		<flow-ref doc:name="get::getAccountDetails-implementationFlow" doc:id="dbacc3a6-1cee-4994-9d06-bec8f0bf26df" name="get::getAccountDetails-implementationFlow"/>
+		<ee:transform doc:name="response payload" doc:id="3958c450-0bd5-454b-acb7-5e7591a15954" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" doc:name="Exit Logger" doc:id="5903f856-d2f9-49f5-a5fc-5612c2b20ce9" message="Exit from get all account details flow"/>
+    </flow>
+    <flow name="get:\account\(id)\getAcDetails:account-api-config">
+        <logger level="INFO" doc:name="Entry Logger" doc:id="ff2f3b43-23b2-45d4-aaa0-669284f59c34" message="Entry into #[flow.name] flow"/>
+		<set-variable value="#[attributes.uriParams.'id']" doc:name="set account id" doc:id="5faaf36a-3ab2-4128-98a8-fda19a5242de" variableName="id"/>
+		<flow-ref doc:name="get::getAcDetails-flow-implementationFlow" doc:id="bdeec6a9-b1f7-40d2-932d-a7700f1c6e33" name="get::getAcDetails-flow-implementationFlow"/>
+		<ee:transform doc:name="response payload">
+            <ee:message>
+                <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+            </ee:message>
+        </ee:transform>
+		<logger level="INFO" doc:name="Exit Logger" doc:id="c6f44ee0-af18-4948-90de-22d8a2c28a1b" message="Exit from #[flow.name] flow"/>
+    </flow>
+    <flow name="post:\account\createAccount:application\json:account-api-config">
+        <logger level="INFO" doc:name="Entry Logger" doc:id="7c410c45-2822-4b95-8609-2046072a9ed4" message="Entry into create account flow"/>
+		<flow-ref doc:name="post::createAccount-implementationFlow" doc:id="61873335-ac4c-43a8-a294-db50b8f7eab4" name="post::createAccount-implementationFlow"/>
+		<ee:transform doc:name="response payload">
+            <ee:message>
+                <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+            </ee:message>
+        </ee:transform>
+		<logger level="INFO" doc:name="Exit Logger" doc:id="feb908fe-eb92-45e8-91ac-ed109d6d1e1e" message="Exit from create account flow"/>
+    </flow>
+</mule>
